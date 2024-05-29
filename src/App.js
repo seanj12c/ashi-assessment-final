@@ -125,6 +125,11 @@ function AppRoutes() {
 
         {isAdmin && (
           <>
+            <Route
+              path="/"
+              element={isAdmin ? <Navigate to="/admin/dashboard" /> : <Login />}
+            />
+
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
             <Route path="/admin/students" element={<AdminStudents />} />
           </>
