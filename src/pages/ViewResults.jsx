@@ -52,9 +52,19 @@ const ViewResults = () => {
   }, []);
 
   const handleEnlistSpecialization = async () => {
+    const slotDocRef = doc(firestore, "slot", "Oq0uCfcbevIs4VlFLB4h");
+    const slotDoc = await getDoc(slotDocRef);
+    const slotData = slotDoc.data();
     // eslint-disable-next-line
     const inputOptions = topScores.reduce((options, score) => {
-      options[score.specialization] = score.specialization;
+      const scoreSpecializationCamelCase = score.specialization.toLowerCase();
+      const slotCount = slotData[scoreSpecializationCamelCase] || 0;
+
+      options[score.specialization] = {
+        specialization: score.specialization,
+        disabled: slotCount === 0,
+        slotCount: slotCount,
+      };
       return options;
     }, {});
 
@@ -63,14 +73,27 @@ const ViewResults = () => {
       html: `
         <div class="space-y-4">
           ${topScores
-            .map(
-              (score) => `
+            .map((score) => {
+              const scoreSpecializationCamelCase =
+                score.specialization.toLowerCase();
+              const slotCount = slotData[scoreSpecializationCamelCase] || 0;
+              const isDisabled = slotCount === 0;
+
+              return `
               <label class="flex items-center space-x-2">
-                <input type="radio" name="specialization" value="${score.specialization}" class="form-radio h-5 w-5 text-secondary">
-                <span class="text-sm md:text-base">${score.specialization}</span>
+                <input type="radio" name="specialization" value="${
+                  score.specialization
+                }" class="form-radio h-5 w-5 text-secondary" ${
+                isDisabled ? "disabled" : ""
+              }>
+                <span class="text-sm md:text-base ${
+                  isDisabled ? "text-gray-400" : ""
+                }">${score.specialization} ${
+                isDisabled ? "(No slot available)" : ""
+              }</span>
               </label>
-            `
-            )
+            `;
+            })
             .join("")}
         </div>
       `,
