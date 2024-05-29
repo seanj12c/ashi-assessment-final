@@ -2,7 +2,17 @@ import React, { useEffect, useState } from "react";
 import { auth, firestore } from "../firebaseConfig";
 import { increment, doc, getDoc, updateDoc } from "firebase/firestore";
 import Swal from "sweetalert2";
-import { Document, Packer, Paragraph, TextRun } from "docx";
+import {
+  Document,
+  Packer,
+  Paragraph,
+  TextRun,
+  Table,
+  TableCell,
+  TableRow,
+  WidthType,
+  AlignmentType,
+} from "docx";
 import { saveAs } from "file-saver";
 import { Link } from "react-router-dom";
 import { AiOutlineLoading } from "react-icons/ai";
@@ -14,6 +24,7 @@ const ViewResults = () => {
   const [specialization, setSpecialization] = useState(null);
   const [userData, setUserData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [allTopSlotsFull, setAllTopSlotsFull] = useState(false);
 
   useEffect(() => {
     const fetchScores = async () => {
@@ -44,6 +55,20 @@ const ViewResults = () => {
 
         setTopScores(sortedScores);
         setAllScores(scoresArray);
+
+        // Check slot availability
+        const slotDocRef = doc(firestore, "slot", "Oq0uCfcbevIs4VlFLB4h");
+        const slotDoc = await getDoc(slotDocRef);
+        const slotData = slotDoc.data();
+
+        const allSlotsFull = sortedScores.every((score) => {
+          const scoreSpecializationCamelCase =
+            score.specialization.toLowerCase();
+          const slotCount = slotData[scoreSpecializationCamelCase] || 0;
+          return slotCount === 0;
+        });
+
+        setAllTopSlotsFull(allSlotsFull);
       }
       setIsLoading(false);
     };
@@ -174,6 +199,12 @@ const ViewResults = () => {
           properties: {},
           children: [
             new Paragraph({
+              text: "Amaya School of Home Industries",
+              heading: "Title",
+              alignment: AlignmentType.CENTER,
+            }),
+            new Paragraph({ text: "", spacing: { after: 200 } }),
+            new Paragraph({
               children: [
                 new TextRun({
                   text: "Student Information",
@@ -186,44 +217,100 @@ const ViewResults = () => {
                 after: 200,
               },
             }),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: `Name: ${userData.lastName}, ${userData.firstName} ${userData.middleName}`,
+            new Table({
+              rows: [
+                new TableRow({
+                  children: [
+                    new TableCell({
+                      children: [new Paragraph("Name")],
+                    }),
+                    new TableCell({
+                      children: [
+                        new Paragraph(
+                          `${userData.lastName}, ${userData.firstName}, ${
+                            userData.middleName || "N/A"
+                          }`
+                        ),
+                      ],
+                    }),
+                  ],
+                }),
+                new TableRow({
+                  children: [
+                    new TableCell({
+                      children: [new Paragraph("Gender")],
+                    }),
+                    new TableCell({
+                      children: [new Paragraph(userData.gender)],
+                    }),
+                  ],
+                }),
+                new TableRow({
+                  children: [
+                    new TableCell({
+                      children: [new Paragraph("LRN")],
+                    }),
+                    new TableCell({
+                      children: [new Paragraph(userData.lrn)],
+                    }),
+                  ],
+                }),
+                new TableRow({
+                  children: [
+                    new TableCell({
+                      children: [new Paragraph("Email")],
+                    }),
+                    new TableCell({
+                      children: [new Paragraph(userData.email)],
+                    }),
+                  ],
+                }),
+                new TableRow({
+                  children: [
+                    new TableCell({
+                      children: [new Paragraph("Contact")],
+                    }),
+                    new TableCell({
+                      children: [new Paragraph(userData.contact)],
+                    }),
+                  ],
+                }),
+                new TableRow({
+                  children: [
+                    new TableCell({
+                      children: [new Paragraph("Address")],
+                    }),
+                    new TableCell({
+                      children: [new Paragraph(userData.address)],
+                    }),
+                  ],
+                }),
+                new TableRow({
+                  children: [
+                    new TableCell({
+                      children: [new Paragraph("Enlist Date")],
+                    }),
+                    new TableCell({
+                      children: [new Paragraph(userData.enlistDate)],
+                    }),
+                  ],
+                }),
+                new TableRow({
+                  children: [
+                    new TableCell({
+                      children: [new Paragraph("Specialization")],
+                    }),
+                    new TableCell({
+                      children: [
+                        new Paragraph(userData.specialization || "N/A"),
+                      ],
+                    }),
+                  ],
                 }),
               ],
-              spacing: {
-                after: 100,
-              },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: `Gender: ${userData.gender}`,
-                }),
-              ],
-              spacing: {
-                after: 100,
-              },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: `LRN: ${userData.lrn}`,
-                }),
-              ],
-              spacing: {
-                after: 100,
-              },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: `Specialization: ${userData.specialization || "N/A"}`,
-                }),
-              ],
-              spacing: {
-                after: 200,
+              width: {
+                size: 100,
+                type: WidthType.PERCENTAGE,
               },
             }),
             new Paragraph({
@@ -239,19 +326,27 @@ const ViewResults = () => {
                 after: 200,
               },
             }),
-            ...allScores.map(
-              (score) =>
-                new Paragraph({
-                  children: [
-                    new TextRun(
-                      `${score.specialization}: ${score.percentage}%`
-                    ),
-                  ],
-                  spacing: {
-                    after: 100,
-                  },
-                })
-            ),
+            new Table({
+              rows: [
+                ...allScores.map(
+                  (score) =>
+                    new TableRow({
+                      children: [
+                        new TableCell({
+                          children: [new Paragraph(score.specialization)],
+                        }),
+                        new TableCell({
+                          children: [new Paragraph(`${score.percentage}%`)],
+                        }),
+                      ],
+                    })
+                ),
+              ],
+              width: {
+                size: 100,
+                type: WidthType.PERCENTAGE,
+              },
+            }),
           ],
         },
       ],
@@ -329,24 +424,32 @@ const ViewResults = () => {
               </div>
             </div>
 
-            <div className="mt-4 flex flex-col gap-2 justify-center md:flex-row text-center">
-              <button
-                onClick={handleEnlistSpecialization}
-                className="btn btn-secondary text-white"
-                disabled={specialization !== null}
-              >
-                {specialization
-                  ? `Specialization Enlisted: ${specialization}`
-                  : "Enlist a Specialization"}
-              </button>
-              {specialization && (
-                <button
-                  onClick={handleDownloadForm}
-                  className="btn btn-primary text-white"
-                >
-                  Download Form
-                </button>
+            <div className="mt-4">
+              {allTopSlotsFull && (
+                <h1 className="italic text-error text-center text-xs">
+                  Your top 3 scores was full, download the form and present it
+                  to the school.
+                </h1>
               )}
+              <div className=" flex flex-col gap-2 justify-center md:flex-row text-center">
+                <button
+                  onClick={handleEnlistSpecialization}
+                  className="btn btn-secondary text-white"
+                  disabled={specialization !== null}
+                >
+                  {specialization
+                    ? `Specialization Enlisted: ${specialization}`
+                    : "Enlist a Specialization"}
+                </button>
+                {!specialization || allTopSlotsFull || (
+                  <button
+                    onClick={handleDownloadForm}
+                    className="btn btn-primary text-white"
+                  >
+                    Download Form
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>
