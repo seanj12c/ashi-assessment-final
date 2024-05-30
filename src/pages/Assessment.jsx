@@ -1205,9 +1205,8 @@ const Assessment = () => {
       <div className="bg-white shadow-md rounded-lg p-6">
         <h1 className="text-3xl font-bold mb-4 text-center">Assessment</h1>
         <p>
-          <span className="font-bold">Instruction: </span>
-          Please answer each question{" "}
-          <span className="font-bold">carefully</span> and{" "}
+          <span className="font-bold underline">Instruction</span>: Please
+          answer each question <span className="font-bold">carefully</span> and{" "}
           <span className="font-bold">honestly</span>, as this will impact your
           specialization. <span className="font-bold">Take your time</span>,
           ensure <span className="font-bold">ALL</span> answers are complete,
