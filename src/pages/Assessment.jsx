@@ -1202,9 +1202,21 @@ const Assessment = () => {
 
   return (
     <div className="container mx-auto p-4">
-      <h1 className="text-3xl font-bold mb-4 text-center">Assessment</h1>
+      <div className="bg-white shadow-md rounded-lg p-6">
+        <h1 className="text-3xl font-bold mb-4 text-center">Assessment</h1>
+        <p>
+          <span className="font-bold">Instruction: </span>
+          Please answer each question{" "}
+          <span className="font-bold">carefully</span> and{" "}
+          <span className="font-bold">honestly</span>, as this will impact your
+          specialization. <span className="font-bold">Take your time</span>,
+          ensure <span className="font-bold">ALL</span> answers are complete,
+          and seek clarification if needed. Your responses are confidential and
+          will guide your specialization choice.
+        </p>
+      </div>
       {specializationQuestions.map((specializationObj, specializationIndex) => (
-        <div key={specializationIndex} className="mb-8">
+        <div key={specializationIndex} className="my-4">
           <div className="bg-white shadow-md rounded-lg p-6">
             <h2 className="text-2xl text-center font-semibold mb-4">
               Specialization: {specializationObj.specialization}

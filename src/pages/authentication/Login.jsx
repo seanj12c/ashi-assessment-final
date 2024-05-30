@@ -69,7 +69,7 @@ const Login = () => {
       input: "email",
       inputLabel: "Email address",
       inputPlaceholder: "Enter your email",
-      confirmButtonColor: "#FBCD15",
+      confirmButtonColor: "#0D3A67",
       showCancelButton: true,
       inputValidator: (value) => {
         if (!value) {
@@ -190,12 +190,7 @@ const Login = () => {
                   onClick={() => setShowPassword(!showPassword)}
                   className="text-gray-600 focus:outline-none"
                 >
-                  {showPassword ? (
-                 <FaRegEyeSlash />
-
-                  ) : (
-                    <FaRegEye />
-                  )}
+                  {showPassword ? <FaRegEyeSlash /> : <FaRegEye />}
                 </button>
               </label>
             </div>
