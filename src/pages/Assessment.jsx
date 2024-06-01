@@ -3,9 +3,23 @@ import Swal from "sweetalert2";
 import { auth, firestore } from "../firebaseConfig";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
+
 const Assessment = () => {
   const navigate = useNavigate();
   const [submitted, setSubmitted] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(3); // Number of specializations to display per page
+  const [shuffledSpecializationQuestions, setShuffledSpecializationQuestions] =
+    useState([]);
+
+  // Shuffle function
+  const shuffleArray = (array) => {
+    for (let i = array.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+  };
 
   useEffect(() => {
     const checkPreviousAssessment = async () => {
@@ -28,6 +42,14 @@ const Assessment = () => {
     };
 
     checkPreviousAssessment();
+
+    // Shuffle specializations and their questions
+    const shuffledSpecializations = shuffleArray([...specializationQuestions]);
+    shuffledSpecializations.forEach((specialization) => {
+      specialization.questions = shuffleArray([...specialization.questions]);
+    });
+    setShuffledSpecializationQuestions(shuffledSpecializations);
+    // eslint-disable-next-line
   }, [navigate]);
 
   const [answers, setAnswers] = useState([
@@ -42,7 +64,6 @@ const Assessment = () => {
     Array(15).fill(""), // For FoodandBeverages
   ]);
 
-  // Questions and correct answers for Tourism specialization
   const specializationQuestions = [
     {
       specialization: "Tourism",
@@ -1113,7 +1134,6 @@ const Assessment = () => {
       ],
     },
   ];
-
   // Function to handle user input for each question
   const handleAnswerChange = (specializationIndex, questionIndex, event) => {
     const newAnswers = [...answers];
@@ -1123,7 +1143,7 @@ const Assessment = () => {
 
   // Function to calculate scores for all specializations
   const calculateScores = () => {
-    const scores = specializationQuestions.map(
+    const scores = shuffledSpecializationQuestions.map(
       (specializationObj, specializationIndex) => {
         let score = 0;
         answers[specializationIndex].forEach((userAnswer, index) => {
@@ -1167,7 +1187,6 @@ const Assessment = () => {
       const userRef = doc(firestore, "users", userId);
       const userData = await getDoc(userRef);
 
-      // Update existing user data with scores
       if (userData.exists()) {
         const userScores = userData.data().scores || {};
         scores.forEach((scoreObj) => {
@@ -1200,6 +1219,26 @@ const Assessment = () => {
     }
   };
 
+  // Pagination
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = shuffledSpecializationQuestions.slice(
+    indexOfFirstItem,
+    indexOfLastItem
+  );
+
+  const totalPages = Math.ceil(
+    shuffledSpecializationQuestions.length / itemsPerPage
+  );
+
+  const handlePaginationClick = (pageNumber) => {
+    setCurrentPage(pageNumber);
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  };
+
   return (
     <div className="container mx-auto p-4">
       <div className="bg-white shadow-md rounded-lg p-6">
@@ -1210,78 +1249,84 @@ const Assessment = () => {
           <span className="font-bold">honestly</span>, as this will impact your
           specialization. <span className="font-bold">Take your time</span>,
           ensure <span className="font-bold">ALL</span> answers are complete,
-          and seek clarification if needed. Your responses are confidential and
-          will guide your specialization choice.
+          and seek clarification if needed. Answers to{" "}
+          <span className="font-bold">identification</span> questions must be in{" "}
+          <span className="font-bold">ALL-CAPS</span>. Your responses are
+          confidential and will guide your specialization choice.
         </p>
       </div>
-      {specializationQuestions.map((specializationObj, specializationIndex) => (
+      {currentItems.map((specializationObj, specializationIndex) => (
         <div key={specializationIndex} className="my-4">
           <div className="bg-white shadow-md rounded-lg p-6">
             <h2 className="text-2xl text-center font-semibold mb-4">
               Specialization: {specializationObj.specialization}
             </h2>
             <div className="space-y-6">
-              {specializationObj.questions.map((questionObj, questionIndex) => (
-                <div
-                  key={questionIndex}
-                  id={`question-${questionIndex}`}
-                  className={`bg-gray-100 p-4 rounded-lg ${
-                    submitted &&
-                    answers[specializationIndex][questionIndex].trim() === ""
-                      ? "bg-red-200" // Apply red background if question is unanswered and form is submitted
-                      : ""
-                  }`}
-                >
-                  <p className="font-medium mb-2">{questionObj.question}</p>
-                  <div>
-                    {questionObj.type === "multiple-choice" ? (
-                      questionObj.options.map((option, optionIndex) => (
-                        <div
-                          key={optionIndex}
-                          className="flex items-center mb-2"
-                        >
-                          <input
-                            id={`answer-${specializationIndex}-${questionIndex}-${optionIndex}`}
-                            type="radio"
-                            name={`answer-${specializationIndex}-${questionIndex}`}
-                            className="mr-2"
-                            value={option}
-                            checked={
-                              answers[specializationIndex][questionIndex] ===
-                              option
-                            }
-                            onChange={(e) =>
-                              handleAnswerChange(
-                                specializationIndex,
-                                questionIndex,
-                                e
-                              )
-                            }
-                          />
-                          <label
-                            htmlFor={`answer-${specializationIndex}-${questionIndex}-${optionIndex}`}
+              {specializationObj.questions.map((questionObj, questionIndex) => {
+                const globalQuestionIndex =
+                  (currentPage - 1) * itemsPerPage + specializationIndex;
+                return (
+                  <div
+                    key={questionIndex}
+                    id={`question-${globalQuestionIndex}`}
+                    className={`bg-gray-100 p-4 rounded-lg ${
+                      submitted &&
+                      answers[globalQuestionIndex][questionIndex].trim() === ""
+                        ? "bg-red-200"
+                        : ""
+                    }`}
+                  >
+                    <p className="font-medium mb-2">{questionObj.question}</p>
+                    <div>
+                      {questionObj.type === "multiple-choice" ? (
+                        questionObj.options.map((option, optionIndex) => (
+                          <div
+                            key={optionIndex}
+                            className="flex items-center mb-2"
                           >
-                            {option}
-                          </label>
-                        </div>
-                      ))
-                    ) : (
-                      <input
-                        type="text"
-                        className="border p-2 w-full rounded-md"
-                        value={answers[specializationIndex][questionIndex]}
-                        onChange={(e) =>
-                          handleAnswerChange(
-                            specializationIndex,
-                            questionIndex,
-                            e
-                          )
-                        }
-                      />
-                    )}
+                            <input
+                              id={`answer-${globalQuestionIndex}-${questionIndex}-${optionIndex}`}
+                              type="radio"
+                              name={`answer-${globalQuestionIndex}-${questionIndex}`}
+                              className="mr-2"
+                              value={option}
+                              checked={
+                                answers[globalQuestionIndex][questionIndex] ===
+                                option
+                              }
+                              onChange={(e) =>
+                                handleAnswerChange(
+                                  globalQuestionIndex,
+                                  questionIndex,
+                                  e
+                                )
+                              }
+                            />
+                            <label
+                              htmlFor={`answer-${globalQuestionIndex}-${questionIndex}-${optionIndex}`}
+                            >
+                              {option}
+                            </label>
+                          </div>
+                        ))
+                      ) : (
+                        <input
+                          type="text"
+                          className="border p-2 w-full rounded-md"
+                          value={answers[globalQuestionIndex][questionIndex]}
+                          onChange={(e) =>
+                            handleAnswerChange(
+                              globalQuestionIndex,
+                              questionIndex,
+                              e
+                            )
+                          }
+                        />
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>
@@ -1290,6 +1335,46 @@ const Assessment = () => {
         <button className="btn btn-primary" onClick={handleSubmit}>
           Submit
         </button>
+      </div>
+
+      {/* Pagination */}
+      <div className="mt-8 flex justify-center">
+        <nav aria-label="Page navigation">
+          <ul className="inline-flex -space-x-px">
+            <li>
+              <button
+                onClick={() => handlePaginationClick(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="px-3 py-2 ml-0 leading-tight text-gray-500 bg-white border border-gray-300 rounded-l-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white"
+                aria-label="Previous"
+              >
+                <span aria-hidden="true">&laquo;</span>
+              </button>
+            </li>
+            {Array.from({ length: totalPages }, (_, i) => (
+              <li key={i}>
+                <button
+                  onClick={() => handlePaginationClick(i + 1)}
+                  className={`px-3 py-2 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white ${
+                    currentPage === i + 1 ? "bg-blue-500 text-white" : ""
+                  }`}
+                >
+                  {i + 1}
+                </button>
+              </li>
+            ))}
+            <li>
+              <button
+                onClick={() => handlePaginationClick(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className="px-3 py-2 leading-tight text-gray-500 bg-white border border-gray-300 rounded-r-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white disabled:opacity-50"
+                aria-label="Next"
+              >
+                <span aria-hidden="true">&raquo;</span>
+              </button>
+            </li>
+          </ul>
+        </nav>
       </div>
     </div>
   );

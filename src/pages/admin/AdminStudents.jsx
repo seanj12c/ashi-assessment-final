@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import {
   collection,
   doc,
+  getDoc,
   getDocs,
   increment,
   updateDoc,
@@ -23,12 +24,14 @@ import {
   WidthType,
 } from "docx";
 import { saveAs } from "file-saver";
-import { MdEdit } from "react-icons/md";
+import { MdEdit, MdOutlinePageview } from "react-icons/md";
 
 const AdminStudents = () => {
   const [students, setStudents] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedSpecialization, setSelectedSpecialization] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [studentsPerPage] = useState(10);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -72,10 +75,12 @@ const AdminStudents = () => {
 
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
+    setCurrentPage(1);
   };
 
   const handleSpecializationChange = (e) => {
     setSelectedSpecialization(e.target.value);
+    setCurrentPage(1);
   };
 
   const filteredStudents = students.filter((student) => {
@@ -88,6 +93,15 @@ const AdminStudents = () => {
 
     return matchesSearchTerm && matchesSpecialization;
   });
+
+  const indexOfLastStudent = currentPage * studentsPerPage;
+  const indexOfFirstStudent = indexOfLastStudent - studentsPerPage;
+  const currentStudents = filteredStudents.slice(
+    indexOfFirstStudent,
+    indexOfLastStudent
+  );
+
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
   const downloadDocx = () => {
     const doc = new Document({
@@ -264,6 +278,78 @@ const AdminStudents = () => {
     }
   };
 
+  // Calculate the total number of pages
+  const totalPages = Math.ceil(filteredStudents.length / studentsPerPage);
+
+  const handleViewResults = async (userId) => {
+    try {
+      // Fetch the user document from Firestore
+      const userDocRef = doc(firestore, "users", userId);
+      const userDoc = await getDoc(userDocRef);
+      const userData = userDoc.data();
+
+      // Check if the user has scores
+      if (!userData || !userData.scores) {
+        throw new Error("User scores not found");
+      }
+
+      // Extract scores from user data
+      const scores = userData.scores;
+
+      // Calculate progress percentage for each subject
+      const progress = Object.fromEntries(
+        Object.entries(scores).map(([subject, score]) => [
+          subject,
+          ((score / 15) * 100).toFixed(2),
+        ])
+      );
+
+      // Generate HTML for the Swal modal
+      const htmlContent = `
+        <div class="space-y-4">
+          <ul>
+            ${Object.entries(scores)
+              .map(
+                ([subject, score]) => `
+                  <li>
+                    <div class="flex items-center justify-between">
+                      <span>${subject}</span>
+                      <span class="ml-4">${score}/15</span>
+                    </div>
+                    <div class="bg-gray-200 h-6 rounded-lg mt-2">
+                      <div class="bg-blue-500 h-full rounded-lg" style="width: ${progress[subject]}%"></div>
+                    </div>
+                  </li>
+                `
+              )
+              .join("")}
+          </ul>
+        </div>
+      `;
+
+      // Display scores with progress in Swal modal
+      Swal.fire({
+        title: `Scores of ${userData.firstName} ${userData.lastName}`,
+        html: htmlContent,
+        confirmButtonText: "Close",
+        confirmButtonColor: "#0D3A67",
+        customClass: {
+          title: "text-xl font-semibold mb-4",
+          htmlContainer: "py-4",
+          confirmButton:
+            "bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded",
+        },
+      });
+    } catch (error) {
+      console.error("Error fetching user scores:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Oops! Something went wrong.",
+        text: "Unable to fetch user scores.",
+      });
+    }
+  };
+
   return (
     <div className="h-full">
       <AdminNavbar className="md:hidden" />
@@ -333,7 +419,7 @@ const AdminStudents = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredStudents.map((student) => (
+                {currentStudents.map((student) => (
                   <tr key={student.id}>
                     <td className="py-4 px-6 whitespace-nowrap">
                       <div className="text-xs md:text-sm font-medium text-gray-900">
@@ -370,29 +456,79 @@ const AdminStudents = () => {
                         {student.enlistDate || "N/A"}
                       </div>
                     </td>
-                    <td className="py-4 px-6 whitespace-nowrap">
-                      <td className="py-4 px-6 whitespace-nowrap">
-                        <div className="text-xs text-center md:text-sm text-gray-500">
-                          <button
-                            className="btn btn-sm btn-square btn-secondary"
-                            onClick={() =>
-                              handleEditSpecialization(
-                                student.id,
-                                student,
-                                student.specialization
-                              )
-                            }
-                            disabled={!student.isDone} // Disable button if student is not enlisted
-                          >
-                            <MdEdit size={20} />
-                          </button>
-                        </div>
-                      </td>
+                    <td className="py-4 px-6 flex justify-center whitespace-nowrap ">
+                      <div className="text-xs flex gap-2 text-center md:text-sm text-gray-500">
+                        <button
+                          className="btn btn-sm btn-square btn-secondary"
+                          onClick={() =>
+                            handleEditSpecialization(
+                              student.id,
+                              student,
+                              student.specialization
+                            )
+                          }
+                          disabled={!student.isDone} // Disable button if student is not enlisted
+                        >
+                          <MdEdit size={20} />
+                        </button>
+                        <button
+                          className="btn btn-sm btn-square btn-secondary"
+                          onClick={() =>
+                            handleViewResults(
+                              student.id,
+                              student,
+                              student.specialization
+                            )
+                          }
+                          disabled={!student.isDone} // Disable button if student is not enlisted
+                        >
+                          <MdOutlinePageview size={20} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+          </div>
+
+          <div className="mt-4 flex justify-center">
+            <nav aria-label="Page navigation">
+              <ul className="inline-flex -space-x-px">
+                <li>
+                  <button
+                    onClick={() => paginate(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="px-3 py-2 ml-0 leading-tight text-gray-500 bg-white border border-gray-300 rounded-l-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white"
+                    aria-label="Previous"
+                  >
+                    <span aria-hidden="true">&laquo;</span>
+                  </button>
+                </li>
+                {Array.from({ length: totalPages }, (_, i) => (
+                  <li key={i}>
+                    <button
+                      onClick={() => paginate(i + 1)}
+                      className={`px-3 py-2 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white ${
+                        currentPage === i + 1 ? "bg-blue-500 text-white" : ""
+                      }`}
+                    >
+                      {i + 1}
+                    </button>
+                  </li>
+                ))}
+                <li>
+                  <button
+                    onClick={() => paginate(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className="px-3 py-2 leading-tight text-gray-500 bg-white border border-gray-300 rounded-r-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white disabled:opacity-50"
+                    aria-label="Next"
+                  >
+                    <span aria-hidden="true">&raquo;</span>
+                  </button>
+                </li>
+              </ul>
+            </nav>
           </div>
         </div>
       </div>
