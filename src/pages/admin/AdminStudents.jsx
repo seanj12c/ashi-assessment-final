@@ -549,6 +549,14 @@ const Sidebar = ({ handleLogout }) => (
         <Link to="/admin/students">
           <li className="p-4 hover:bg-gray-700 cursor-pointer">Students</li>
         </Link>
+        <Link to="/admin/mission_vision">
+          <li className="p-4 hover:bg-gray-700 cursor-pointer">
+            Mission & Vision
+          </li>
+        </Link>
+        <Link to="/admin/personnel">
+          <li className="p-4 hover:bg-gray-700 cursor-pointer">Personnel</li>
+        </Link>
         <button
           onClick={handleLogout}
           className="p-4 hover:bg-gray-700 w-full cursor-pointer text-left"

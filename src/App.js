@@ -17,9 +17,11 @@ import { AuthProvider } from "./authContext";
 import Profile from "./pages/Profile";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminStudents from "./pages/admin/AdminStudents";
+import AdminMV from "./pages/admin/AdminMV";
 import Assessment from "./pages/Assessment";
 import { AiOutlineLoading } from "react-icons/ai";
 import ViewResults from "./pages/ViewResults";
+import AdminPersonnel from "./pages/admin/AdminPersonnel";
 
 function AppRoutes() {
   const location = useLocation();
@@ -29,12 +31,14 @@ function AppRoutes() {
     "/register",
     "/admin/dashboard",
     "/admin/students",
+    "/admin/mission_vision",
+    "/admin/personnel",
   ];
 
   const isNavbarHidden = navbarHiddenRoutes.includes(location.pathname);
 
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true); // Add loading state
+  const [loading, setLoading] = useState(true);
   // eslint-disable-next-line
   const [userData, setUserData] = useState(null);
 
@@ -132,6 +136,8 @@ function AppRoutes() {
 
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
             <Route path="/admin/students" element={<AdminStudents />} />
+            <Route path="/admin/mission_vision" element={<AdminMV />} />
+            <Route path="/admin/personnel" element={<AdminPersonnel />} />
           </>
         )}
       </Routes>
