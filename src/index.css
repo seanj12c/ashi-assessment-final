@@ -6,3 +6,8 @@ img {
   user-select: none;
   pointer-events: none;
 }
+
+* {
+  font-family: "Poppins", sans-serif;
+  scroll-behavior: smooth !important;
+}

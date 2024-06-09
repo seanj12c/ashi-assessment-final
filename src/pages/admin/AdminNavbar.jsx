@@ -3,7 +3,12 @@ import logo from "../../assets/ASHI_LOGO.png";
 import Swal from "sweetalert2";
 import { auth } from "../../firebaseConfig";
 
-import { FaCalendar, FaChalkboardTeacher, FaSchool } from "react-icons/fa";
+import {
+  FaCalendar,
+  FaChalkboardTeacher,
+  FaQuestion,
+  FaSchool,
+} from "react-icons/fa";
 import { useNavigate, Link } from "react-router-dom";
 import { PiStudent } from "react-icons/pi";
 const AdminNavbar = () => {
@@ -87,6 +92,12 @@ const AdminNavbar = () => {
                 <Link to="/admin/personnel">
                   <FaChalkboardTeacher className="text-secondary" />
                   Personnel
+                </Link>
+              </li>
+              <li>
+                <Link to="/admin/questions">
+                  <FaQuestion className="text-secondary" />
+                  Questions
                 </Link>
               </li>
               <li>

@@ -540,7 +540,7 @@ const Sidebar = ({ handleLogout }) => (
   <div className="w-64 hidden justify-between bg-gray-800 text-white md:flex flex-col">
     <div>
       <div className="p-4 text-lg font-semibold">
-        <img src={logo} className="w-32 mx-auto object-contain" alt="" />
+        <img src={logo} className="w-32 mx-auto object-contain" alt="logo" />
       </div>
       <ul>
         <Link to="/admin/dashboard">
@@ -556,6 +556,9 @@ const Sidebar = ({ handleLogout }) => (
         </Link>
         <Link to="/admin/personnel">
           <li className="p-4 hover:bg-gray-700 cursor-pointer">Personnel</li>
+        </Link>
+        <Link to="/admin/questions">
+          <li className="p-4 hover:bg-gray-700 cursor-pointer">Questions</li>
         </Link>
         <button
           onClick={handleLogout}

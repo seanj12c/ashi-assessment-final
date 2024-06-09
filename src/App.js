@@ -22,6 +22,7 @@ import Assessment from "./pages/Assessment";
 import { AiOutlineLoading } from "react-icons/ai";
 import ViewResults from "./pages/ViewResults";
 import AdminPersonnel from "./pages/admin/AdminPersonnel";
+import AdminQuestions from "./pages/admin/AdminQuestions";
 
 function AppRoutes() {
   const location = useLocation();
@@ -33,6 +34,7 @@ function AppRoutes() {
     "/admin/students",
     "/admin/mission_vision",
     "/admin/personnel",
+    "/admin/questions",
   ];
 
   const isNavbarHidden = navbarHiddenRoutes.includes(location.pathname);
@@ -138,6 +140,7 @@ function AppRoutes() {
             <Route path="/admin/students" element={<AdminStudents />} />
             <Route path="/admin/mission_vision" element={<AdminMV />} />
             <Route path="/admin/personnel" element={<AdminPersonnel />} />
+            <Route path="/admin/questions" element={<AdminQuestions />} />
           </>
         )}
       </Routes>
